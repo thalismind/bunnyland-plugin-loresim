@@ -36,6 +36,39 @@ Loresim is deliberately distinct from its neighbours:
   and nudges toward an unrecorded subject in the room ("a heron here is unrecorded").
 - **Patience** — `SettleConsequence` lets spooked subjects settle back into view over ticks.
 
+## v2: expeditions & published field guides
+
+v2 turns the cataloguing loop into a *living world* headline without touching sound or hearing:
+
+- **Expeditions** (`embark`) — set out to survey a habitat. The party physically travels
+  (core containment/movement) to a field site, and after a couple of ticks
+  `ExpeditionConsequence` turns up a living subject, records it into the same journal the
+  `observe` verb writes to, produces a museum-donatable field sketch, warms co-explorers'
+  affective `SocialBond`s from the shared find, and walks the party home. Co-explorers are a
+  typed `ExpeditionMember` edge, never a list.
+- **Research & publishing** (`publish-field-guide`) — once you have *studied* a habitat
+  (several species, each seen more than once), write it up into a **field guide**: a
+  museum-donatable `Collectible` that promotes every covered species to **mastered** on the
+  open `KnownSpeciesComponent` surface. Authorship is a typed `AuthoredBy` edge.
+- **Deeper KnownSpecies payoff** — knowledge now has two tiers: *known* (recorded) and
+  *mastered* (published). `knows_species` and `masters_species` let any pack branch on either.
+- **Optional cartography connector** — when `bunnyland-cartographysim` is *also* loaded, a
+  naturalist carrying a charted field map can `embark` straight to a room they have charted
+  (chart → explore). It is a `recommends`, never a `requires`: absent the partner, expeditions
+  simply open fresh field sites and a warning is logged.
+- **Storyteller incident** — `MigrationConsequence` brings a rare migrant species into an
+  occupied room on a paced, deterministic cadence, so the pack's pressure is world-wide.
+- **Expedition-ready worldgen** — `NaturalistWorldgenHook` equips generated rangers/botanists
+  with a field journal and a little starting knowledge of their local habitat.
+
+## Verbs
+
+- **`observe`** *(subject)* — record a visible living subject into your field journal.
+- **`embark`** *(habitat, [site_id])* — set out on an expedition to survey a habitat (or a
+  charted site when cartography is present) and record what you find.
+- **`publish-field-guide`** *(habitat)* — write up a habitat you have studied into a
+  museum-donatable field guide that masters its species.
+
 This repo intentionally keeps all field-naturalist work outside the main `bunnyland-server`
 repo. It never imports or touches the sound/hearing systems.
 
