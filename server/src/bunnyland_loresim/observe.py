@@ -85,9 +85,10 @@ class ObserveHandler:
         if rejection is not None:
             return rejection
 
-        if character.has_component(PerceptionComponent) and not character.get_component(
-            PerceptionComponent
-        ).active:
+        if (
+            character.has_component(PerceptionComponent)
+            and not character.get_component(PerceptionComponent).active
+        ):
             return rejected("you cannot see anything right now")
         if subject_id not in reachable_ids(ctx.world, character):
             return rejected("you cannot see that from here")
@@ -155,9 +156,7 @@ class ObserveHandler:
             discoveries = journal.discoveries
             sightings = updated.sightings
 
-        replace_component(
-            character, replace(journal, records=records, discoveries=discoveries)
-        )
+        replace_component(character, replace(journal, records=records, discoveries=discoveries))
         mark_known(character, species)
 
         return SpeciesObservedEvent(

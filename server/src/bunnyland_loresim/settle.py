@@ -37,9 +37,7 @@ class SettleConsequence:
             hiding = new_level <= stealth.hidden_threshold
             if new_level == stealth.visibility_level and hiding == stealth.hiding:
                 continue
-            replace_component(
-                subject, replace(stealth, visibility_level=new_level, hiding=hiding)
-            )
+            replace_component(subject, replace(stealth, visibility_level=new_level, hiding=hiding))
         return []
 
 

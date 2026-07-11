@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from bunnyland.core.world_actor import WorldActor
-from bunnyland.plugins import apply_plugins, load_modules
+from bunnyland.plugins import apply_plugins
 
 from bunnyland_loresim import (
     Collectible,
@@ -9,9 +9,9 @@ from bunnyland_loresim import (
     ExpeditionMember,
     FieldGuideComponent,
     KnownSpeciesComponent,
+    LoreGenerationEnricher,
     LoreJournalComponent,
-    LoreWorldgenHook,
-    NaturalistWorldgenHook,
+    NaturalistGenerationEnricher,
     SpeciesComponent,
     SpyglassComponent,
     expedition_fragments,
@@ -21,16 +21,17 @@ from bunnyland_loresim import (
 )
 from bunnyland_loresim.fieldguide import AuthoredBy
 from bunnyland_loresim.plugin import PLUGIN_ID
+from bunnyland_loresim.plugin import bunnyland_plugins as _plugins
 
 
 def test_plugin_loads_with_dotted_id():
-    plugins = load_modules(["bunnyland_loresim"])
+    plugins = _plugins()
     assert [p.id for p in plugins] == ["bunnyland.loresim"]
     assert PLUGIN_ID == "bunnyland.loresim"
 
 
 def test_plugin_declares_its_contributions():
-    plugin = load_modules(["bunnyland_loresim"])[0]
+    plugin = _plugins()[0]
     for component in (
         SpeciesComponent,
         LoreJournalComponent,
@@ -38,24 +39,26 @@ def test_plugin_declares_its_contributions():
         SpyglassComponent,
     ):
         assert component in plugin.ecs.components
-    assert LoreWorldgenHook in plugin.content.worldgen_hooks
+    assert LoreGenerationEnricher in [type(item) for item in plugin.content.generation_enrichers]
     assert knowledge_fragments in plugin.content.prompt_fragments
     assert journal_fragments in plugin.content.prompt_fragments
 
 
 def test_plugin_version():
-    plugin = load_modules(["bunnyland_loresim"])[0]
+    plugin = _plugins()[0]
     assert plugin.version == "0.2.0"
 
 
 def test_plugin_is_v2():
-    plugin = load_modules(["bunnyland_loresim"])[0]
+    plugin = _plugins()[0]
     assert plugin.version == "0.2.0"
     for component in (ExpeditionComponent, FieldGuideComponent, Collectible):
         assert component in plugin.ecs.components
     for edge in (ExpeditionMember, AuthoredBy):
         assert edge in plugin.ecs.edges
-    assert NaturalistWorldgenHook in plugin.content.worldgen_hooks
+    assert NaturalistGenerationEnricher in [
+        type(item) for item in plugin.content.generation_enrichers
+    ]
     assert expedition_fragments in plugin.content.prompt_fragments
     assert fieldguide_fragments in plugin.content.prompt_fragments
     # Optional synergy with the cartography pack is a recommendation, never a hard requirement.
@@ -72,7 +75,7 @@ def test_plugin_registers_v2_events():
         SpeciesDiscoveredEvent,
     )
 
-    plugin = load_modules(["bunnyland_loresim"])[0]
+    plugin = _plugins()[0]
     for event in (
         ExpeditionStartedEvent,
         SpeciesDiscoveredEvent,
@@ -85,7 +88,7 @@ def test_plugin_registers_v2_events():
 
 def test_plugin_applies_and_registers_verbs():
     actor = WorldActor()
-    applied = apply_plugins(load_modules(["bunnyland_loresim"]), actor)
+    applied = apply_plugins(_plugins(), actor)
     assert applied[0].id == "bunnyland.loresim"
     command_types = {definition.command_type for definition in actor.action_definitions()}
     assert {"observe", "embark", "publish-field-guide"} <= command_types
@@ -95,6 +98,6 @@ def test_plugin_registers_consequences_via_install():
     import asyncio
 
     actor = WorldActor()
-    apply_plugins(load_modules(["bunnyland_loresim"]), actor)
+    apply_plugins(_plugins(), actor)
     # The three consequences (settle, expedition, migration) should advance without error.
     asyncio.run(actor.tick(1.0))

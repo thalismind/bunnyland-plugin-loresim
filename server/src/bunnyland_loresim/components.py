@@ -23,7 +23,8 @@ from relics import Component
 class SpeciesComponent(Component):
     """Marks a *living* creature or plant as an observable, recordable species.
 
-    Placed on generated wildlife/flora by :class:`~bunnyland_loresim.enrichment.LoreWorldgenHook`,
+    Placed on generated wildlife/flora by
+    :class:`~bunnyland_loresim.enrichment.LoreGenerationEnricher`,
     or on hand-built subjects via the spawn helpers. It is descriptive metadata only — it does
     not make the subject capturable or ownable.
     """

@@ -28,8 +28,12 @@ def _journal(records):
 
 def _rec(species, habitat="wetland", sightings=2):
     return SpeciesRecord(
-        species=species, habitat=habitat, rarity="uncommon",
-        first_seen_epoch=1, first_seen_room="r1", sightings=sightings,
+        species=species,
+        habitat=habitat,
+        rarity="uncommon",
+        first_seen_epoch=1,
+        first_seen_room="r1",
+        sightings=sightings,
     )
 
 
@@ -103,8 +107,14 @@ def test_publish_second_edition_increments():
     # A different habitat starts back at edition 1.
     replace_component(
         author,
-        _journal([_rec("bittern"), _rec("spoonbill"), _rec("corncrake", habitat="grassland"),
-                  _rec("harvest mouse", habitat="grassland")]),
+        _journal(
+            [
+                _rec("bittern"),
+                _rec("spoonbill"),
+                _rec("corncrake", habitat="grassland"),
+                _rec("harvest mouse", habitat="grassland"),
+            ]
+        ),
     )
     other = _publish(actor, author.id, "grassland")
     assert other.events[0].edition == 1

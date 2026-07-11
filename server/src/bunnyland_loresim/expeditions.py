@@ -45,7 +45,7 @@ from bunnyland.core.handlers import (
     rejected,
     require_character,
 )
-from bunnyland.mechanics.social import adjust_bond
+from bunnyland.foundation.social.mechanics import adjust_bond
 from pydantic.dataclasses import dataclass
 from relics import Component, Edge, Entity, World
 
@@ -176,9 +176,10 @@ class EmbarkHandler:
         character_id, character, rejection = require_character(ctx, command.character_id)
         if rejection is not None:
             return rejection
-        if character.has_component(PerceptionComponent) and not character.get_component(
-            PerceptionComponent
-        ).active:
+        if (
+            character.has_component(PerceptionComponent)
+            and not character.get_component(PerceptionComponent).active
+        ):
             return rejected("you cannot survey anything right now")
         origin = room_of(ctx.world, character_id)
         if origin is None:

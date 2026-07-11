@@ -118,8 +118,11 @@ def test_knows_species_falls_back_to_journal_when_not_in_component():
         LoreJournalComponent(
             records=(
                 SpeciesRecord(
-                    species="heron", habitat="wetland", rarity="common",
-                    first_seen_epoch=0, first_seen_room="x",
+                    species="heron",
+                    habitat="wetland",
+                    rarity="common",
+                    first_seen_epoch=0,
+                    first_seen_room="x",
                 ),
             )
         ),

@@ -13,7 +13,7 @@ from bunnyland.plugins import (
 
 from .components import LoreJournalComponent, SpeciesComponent, SpyglassComponent
 from .discovery import journal_fragments
-from .enrichment import LoreWorldgenHook
+from .enrichment import LoreGenerationEnricher
 from .events import (
     ExpeditionReturnedEvent,
     ExpeditionStartedEvent,
@@ -40,7 +40,7 @@ from .fieldguide import (
 from .install import install_loresim
 from .knowledge import KnownSpeciesComponent, knowledge_fragments
 from .observe import OBSERVE_ACTION_DEFINITIONS, OBSERVE_ACTION_HANDLERS
-from .worldgen import NaturalistWorldgenHook
+from .worldgen import NaturalistGenerationEnricher
 
 PLUGIN_ID = "bunnyland.loresim"
 
@@ -99,7 +99,7 @@ def plugin() -> Plugin:
                 expedition_fragments,
                 fieldguide_fragments,
             ),
-            worldgen_hooks=(LoreWorldgenHook, NaturalistWorldgenHook),
+            generation_enrichers=(LoreGenerationEnricher(), NaturalistGenerationEnricher()),
         ),
     )
 

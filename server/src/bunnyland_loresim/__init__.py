@@ -26,7 +26,7 @@ from .components import (
     SpyglassComponent,
 )
 from .discovery import completion_by_habitat, is_first_in_world, journal_fragments
-from .enrichment import LoreWorldgenHook
+from .enrichment import LoreGenerationEnricher
 from .events import (
     ExpeditionReturnedEvent,
     ExpeditionStartedEvent,
@@ -84,7 +84,7 @@ from .plugin import PLUGIN_ID, bunnyland_plugins, plugin
 from .prefabs import spawn_naturalist, spawn_spyglass, spawn_subject
 from .settle import SettleConsequence
 from .spatial import held_component, room_of
-from .worldgen import NATURALIST_TERMS, NaturalistWorldgenHook
+from .worldgen import NATURALIST_TERMS, NaturalistGenerationEnricher
 
 __all__ = [
     "EMBARK_DEF",
@@ -115,10 +115,10 @@ __all__ = [
     "FieldGuidePublishedEvent",
     "KnownSpeciesComponent",
     "LoreJournalComponent",
-    "LoreWorldgenHook",
+    "LoreGenerationEnricher",
     "MapComponent",
     "MigrationConsequence",
-    "NaturalistWorldgenHook",
+    "NaturalistGenerationEnricher",
     "ObserveHandler",
     "PublishFieldGuideHandler",
     "RareMigrationEvent",

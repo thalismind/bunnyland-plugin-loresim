@@ -14,13 +14,7 @@ of *sight and patience*, not noise.
 from __future__ import annotations
 
 from bunnyland.core import IdentityComponent
-from bunnyland.core.ecs import parse_entity_id, replace_component
-from bunnyland.core.events import (
-    CharacterGeneratedEvent,
-    GeneratedEntityEvent,
-    ObjectGeneratedEvent,
-)
-from bunnyland.core.world_actor import WorldActor
+from bunnyland.core.generation import GenerationDelta, GenerationRequest
 
 from .components import SpeciesComponent
 
@@ -80,16 +74,14 @@ UNCOMMON_TERMS = ("shy", "elusive", "uncommon", "seldom", "wary")
 RARE_TERMS = ("rare", "legendary", "fabled", "vanishing", "endangered", "mythic")
 
 
-def _text(event: GeneratedEntityEvent) -> str:
-    generation = event.generation
+def _text(request: GenerationRequest) -> str:
     return " ".join(
         (
-            event.entity_key,
-            event.entity_kind,
-            generation.description,
-            *generation.tags,
-            *generation.wants,
-            *generation.needs,
+            request.source_key,
+            request.entity_kind,
+            request.description,
+            *request.tags,
+            *request.capabilities,
         )
     ).casefold()
 
@@ -116,45 +108,42 @@ def _rarity_for(text: str) -> str:
     return "common"
 
 
-def _species_name(entity, event: GeneratedEntityEvent, matched: str) -> str:
-    if entity.has_component(IdentityComponent):
-        name = entity.get_component(IdentityComponent).name.strip()
-        if name:
-            return name.casefold()
-    if event.entity_key:
-        return event.entity_key.casefold()
+def _species_name(request: GenerationRequest, matched: str) -> str:
+    identity = next(
+        (
+            component
+            for component in request.context.get("base_components", ())
+            if isinstance(component, IdentityComponent)
+        ),
+        None,
+    )
+    if identity is not None and identity.name.strip():
+        return identity.name.strip().casefold()
+    if request.source_key:
+        return request.source_key.casefold()
     return matched
 
 
-class LoreWorldgenHook:
+class LoreGenerationEnricher:
     """Attach a :class:`SpeciesComponent` to generated living creatures and plants."""
 
-    def subscribe(self, actor: WorldActor) -> None:
-        self._actor = actor
-        actor.bus.subscribe(CharacterGeneratedEvent, self._on_entity)
-        actor.bus.subscribe(ObjectGeneratedEvent, self._on_entity)
+    capabilities: tuple[str, ...] = ()
 
-    def _entity(self, entity_id: str):
-        parsed = parse_entity_id(entity_id)
-        if parsed is None or not self._actor.world.has_entity(parsed):
-            return None
-        return self._actor.world.get_entity(parsed)
-
-    def _on_entity(self, event: GeneratedEntityEvent) -> None:
-        entity = self._entity(event.entity_id)
-        if entity is None or entity.has_component(SpeciesComponent):
-            return
-        text = _text(event)
+    def enrich(self, request: GenerationRequest) -> GenerationDelta:
+        if request.entity_kind == "room":
+            return GenerationDelta()
+        text = _text(request)
         matched = _matched_living_term(text)
         if matched is None:
-            return
-        replace_component(
-            entity,
-            SpeciesComponent(
-                species=_species_name(entity, event, matched),
-                habitat=_habitat_for(text),
-                rarity=_rarity_for(text),
-            ),
+            return GenerationDelta()
+        return GenerationDelta(
+            components=(
+                SpeciesComponent(
+                    species=_species_name(request, matched),
+                    habitat=_habitat_for(text),
+                    rarity=_rarity_for(text),
+                ),
+            )
         )
 
 
@@ -163,5 +152,5 @@ __all__ = [
     "LIVING_TERMS",
     "RARE_TERMS",
     "UNCOMMON_TERMS",
-    "LoreWorldgenHook",
+    "LoreGenerationEnricher",
 ]

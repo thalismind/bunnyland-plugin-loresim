@@ -103,8 +103,7 @@ def knowledge_fragments(world: World, character: Entity) -> list[str]:
     lines = [f"You have field knowledge of {len(known)} species: {', '.join(known)}."]
     if component.mastered:
         lines.append(
-            f"You have mastered {len(component.mastered)} species: "
-            f"{', '.join(component.mastered)}."
+            f"You have mastered {len(component.mastered)} species: {', '.join(component.mastered)}."
         )
     return lines
 

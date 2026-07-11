@@ -12,7 +12,7 @@ from bunnyland.core import (
 from bunnyland.core.commands import CommandCost, Lane, build_submitted_command
 from bunnyland.core.ecs import contents, parse_entity_id, replace_component
 from bunnyland.core.handlers import HandlerContext
-from bunnyland.mechanics.social import bond_between
+from bunnyland.foundation.social.mechanics import bond_between
 
 from bunnyland_loresim import (
     Collectible,
@@ -235,13 +235,23 @@ def test_species_for_site_is_deterministic_and_in_pool():
 def test_record_sighting_increments_existing_record():
     actor, _room, leader, _ = _scene()
     first = record_sighting(
-        actor.world, leader, species="bittern", habitat="wetland",
-        rarity="uncommon", epoch=1, room_id="r1",
+        actor.world,
+        leader,
+        species="bittern",
+        habitat="wetland",
+        rarity="uncommon",
+        epoch=1,
+        room_id="r1",
     )
     assert first is True  # first in world
     second = record_sighting(
-        actor.world, leader, species="bittern", habitat="wetland",
-        rarity="uncommon", epoch=2, room_id="r1",
+        actor.world,
+        leader,
+        species="bittern",
+        habitat="wetland",
+        rarity="uncommon",
+        epoch=2,
+        room_id="r1",
     )
     assert second is False
     record = leader.get_component(LoreJournalComponent).record_for("bittern")
@@ -252,8 +262,13 @@ def test_record_sighting_creates_journal_when_absent():
     actor, _room, leader, _ = _scene()
     leader.remove_component(LoreJournalComponent)
     record_sighting(
-        actor.world, leader, species="bittern", habitat="wetland",
-        rarity="uncommon", epoch=1, room_id="r1",
+        actor.world,
+        leader,
+        species="bittern",
+        habitat="wetland",
+        rarity="uncommon",
+        epoch=1,
+        room_id="r1",
     )
     assert leader.has_component(LoreJournalComponent)
 
@@ -266,15 +281,24 @@ def test_record_sighting_not_first_when_another_has_it():
         LoreJournalComponent(
             records=(
                 SpeciesRecord(
-                    species="bittern", habitat="wetland", rarity="uncommon",
-                    first_seen_epoch=0, first_seen_room="x", sightings=1,
+                    species="bittern",
+                    habitat="wetland",
+                    rarity="uncommon",
+                    first_seen_epoch=0,
+                    first_seen_room="x",
+                    sightings=1,
                 ),
             )
         ),
     )
     first = record_sighting(
-        actor.world, leader, species="bittern", habitat="wetland",
-        rarity="uncommon", epoch=1, room_id="r1",
+        actor.world,
+        leader,
+        species="bittern",
+        habitat="wetland",
+        rarity="uncommon",
+        epoch=1,
+        room_id="r1",
     )
     assert first is False
 
