@@ -34,8 +34,8 @@ from bunnyland.core import (
     container_of,
     spawn_entity,
 )
-from bunnyland.core.actions import ActionArgument, ActionDefinition
-from bunnyland.core.commands import CommandCost, Lane, SubmittedCommand
+from bunnyland.core.actions import ActionArgument, ActionDefinition, ActionEffort, effort_cost
+from bunnyland.core.commands import Lane, SubmittedCommand
 from bunnyland.core.ecs import contents, parse_entity_id, replace_component
 from bunnyland.core.events import DomainEvent, EventVisibility, event_base
 from bunnyland.core.handlers import (
@@ -384,7 +384,7 @@ EMBARK_DEF = ActionDefinition(
     title="Embark",
     description="Set out on an expedition to survey a habitat and record what you find.",
     lane=Lane.WORLD,
-    cost=CommandCost(action=1),
+    cost=effort_cost(action=ActionEffort.MAJOR),
     arguments={
         "habitat": ActionArgument(
             title="Habitat",

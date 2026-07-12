@@ -25,8 +25,8 @@ from bunnyland.core import (
     PerceptionComponent,
     StealthComponent,
 )
-from bunnyland.core.actions import ActionArgument, ActionDefinition
-from bunnyland.core.commands import CommandCost, Lane, SubmittedCommand
+from bunnyland.core.actions import ActionArgument, ActionDefinition, ActionEffort, effort_cost
+from bunnyland.core.commands import Lane, SubmittedCommand
 from bunnyland.core.ecs import reachable_ids, replace_component
 from bunnyland.core.events import EventVisibility
 from bunnyland.core.handlers import (
@@ -179,7 +179,7 @@ OBSERVE_DEF = ActionDefinition(
     title="Observe",
     description="Record a living creature or plant you can see into your field journal.",
     lane=Lane.WORLD,
-    cost=CommandCost(action=1),
+    cost=effort_cost(action=ActionEffort.ROUTINE),
     arguments={
         "subject_id": ActionArgument(
             title="Subject",

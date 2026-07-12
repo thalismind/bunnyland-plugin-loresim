@@ -20,8 +20,8 @@ lore vocabulary), never from ``random`` or the clock.
 from __future__ import annotations
 
 from bunnyland.core import ContainmentMode, Contains, IdentityComponent
-from bunnyland.core.actions import ActionArgument, ActionDefinition
-from bunnyland.core.commands import CommandCost, Lane, SubmittedCommand
+from bunnyland.core.actions import ActionArgument, ActionDefinition, ActionEffort, effort_cost
+from bunnyland.core.commands import Lane, SubmittedCommand
 from bunnyland.core.ecs import spawn_entity
 from bunnyland.core.events import EventVisibility
 from bunnyland.core.handlers import (
@@ -212,7 +212,7 @@ PUBLISH_DEF = ActionDefinition(
     title="Publish field guide",
     description="Write up a habitat you have studied into a museum-donatable field guide.",
     lane=Lane.WORLD,
-    cost=CommandCost(action=1),
+    cost=effort_cost(action=ActionEffort.EXTENDED),
     arguments={
         "habitat": ActionArgument(
             title="Habitat",
