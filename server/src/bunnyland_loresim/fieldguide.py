@@ -22,21 +22,21 @@ from __future__ import annotations
 from bunnyland.core import ContainmentMode, Contains, IdentityComponent
 from bunnyland.core.actions import ActionArgument, ActionDefinition, ActionEffort, effort_cost
 from bunnyland.core.commands import Lane, SubmittedCommand
-from bunnyland.core.ecs import spawn_entity
 from bunnyland.core.events import EventVisibility
 from bunnyland.core.handlers import (
     HandlerContext,
     HandlerResult,
-    ok,
+    planned,
     rejected,
     require_character,
 )
+from bunnyland.core.mutations import AddEdge, AddEntity, EntityReference, MutationPlan, SetComponent
 from pydantic.dataclasses import dataclass
 from relics import Component, Edge, Entity, World
 
 from .components import LoreJournalComponent, SpeciesRecord
 from .events import FieldGuidePublishedEvent
-from .knowledge import mark_mastered
+from .knowledge import KnownSpeciesComponent
 from .lore import lore_notes
 
 #: How many *well-studied* species (seen >= STUDY_SIGHTINGS) a habitat needs to publish.
@@ -140,54 +140,62 @@ class PublishFieldGuideHandler:
 
         species = tuple(record.species for record in records)
         edition = author_editions(ctx.world, character_id, habitat) + 1
-        guide = self._spawn_guide(ctx.world, character, habitat, records, species, edition)
-        for name in species:
-            mark_mastered(character, name)
-        return ok(
-            FieldGuidePublishedEvent(
+        guide = EntityReference()
+        quality = "rich" if len(species) >= 4 else "standard"
+        knowledge = (
+            character.get_component(KnownSpeciesComponent)
+            if character.has_component(KnownSpeciesComponent)
+            else KnownSpeciesComponent()
+        )
+        known = tuple(sorted({*knowledge.species, *species}))
+        mastered = tuple(sorted({*knowledge.mastered, *species}))
+        return planned(
+            MutationPlan(
+                (
+                    AddEntity(
+                        (
+                            IdentityComponent(
+                                name=f"field guide to the {habitat}", kind="document"
+                            ),
+                            FieldGuideComponent(
+                                habitat=habitat,
+                                species=species,
+                                edition=edition,
+                                notes=_guide_notes(records),
+                            ),
+                            Collectible(
+                                kind="field-guide",
+                                title=f"field guide to the {habitat} (ed. {edition})",
+                                category="field-guides",
+                                quality=quality,
+                            ),
+                        ),
+                        reference=guide,
+                    ),
+                    AddEdge(guide, character.id, AuthoredBy()),
+                    AddEdge(
+                        character.id,
+                        guide,
+                        Contains(mode=ContainmentMode.INVENTORY),
+                    ),
+                    SetComponent(
+                        character.id,
+                        KnownSpeciesComponent(species=known, mastered=mastered),
+                    ),
+                )
+            ),
+            lambda: FieldGuidePublishedEvent(
                 **ctx.event_base(
                     visibility=EventVisibility.PRIVATE,
                     actor_id=str(character_id),
-                    target_ids=(str(guide.id),),
-                    guide_id=str(guide.id),
+                    target_ids=(str(guide.require()),),
+                    guide_id=str(guide.require()),
                     habitat=habitat,
                     species=species,
                     edition=edition,
                 )
-            )
+            ),
         )
-
-    def _spawn_guide(
-        self,
-        world: World,
-        author: Entity,
-        habitat: str,
-        records: tuple[SpeciesRecord, ...],
-        species: tuple[str, ...],
-        edition: int,
-    ) -> Entity:
-        quality = "rich" if len(species) >= 4 else "standard"
-        guide = spawn_entity(
-            world,
-            [
-                IdentityComponent(name=f"field guide to the {habitat}", kind="document"),
-                FieldGuideComponent(
-                    habitat=habitat,
-                    species=species,
-                    edition=edition,
-                    notes=_guide_notes(records),
-                ),
-                Collectible(
-                    kind="field-guide",
-                    title=f"field guide to the {habitat} (ed. {edition})",
-                    category="field-guides",
-                    quality=quality,
-                ),
-            ],
-        )
-        guide.add_relationship(AuthoredBy(), author.id)
-        author.add_relationship(Contains(mode=ContainmentMode.INVENTORY), guide.id)
-        return guide
 
 
 def fieldguide_fragments(world: World, character: Entity) -> list[str]:

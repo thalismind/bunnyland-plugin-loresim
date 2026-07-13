@@ -21,22 +21,22 @@ from __future__ import annotations
 from dataclasses import replace
 
 from bunnyland.core import (
-    IdentityComponent,
     PerceptionComponent,
     StealthComponent,
 )
 from bunnyland.core.actions import ActionArgument, ActionDefinition, ActionEffort, effort_cost
 from bunnyland.core.commands import Lane, SubmittedCommand
-from bunnyland.core.ecs import reachable_ids, replace_component
+from bunnyland.core.ecs import reachable_ids
 from bunnyland.core.events import EventVisibility
 from bunnyland.core.handlers import (
     HandlerContext,
     HandlerResult,
-    ok,
+    planned,
     rejected,
     require_character,
     require_entity,
 )
+from bunnyland.core.mutations import MutationPlan, SetComponent
 
 from .components import (
     LoreJournalComponent,
@@ -46,7 +46,7 @@ from .components import (
 )
 from .discovery import is_first_in_world
 from .events import SpeciesObservedEvent
-from .knowledge import mark_known
+from .knowledge import KnownSpeciesComponent
 from .spatial import held_component, room_of
 
 
@@ -56,14 +56,6 @@ def _is_hidden(subject) -> bool:
         return False
     stealth = subject.get_component(StealthComponent)
     return stealth.hiding and stealth.visibility_level <= stealth.hidden_threshold
-
-
-def _subject_name(subject, species: str) -> str:
-    if subject.has_component(IdentityComponent):
-        name = subject.get_component(IdentityComponent).name.strip()
-        if name:
-            return name
-    return species
 
 
 class ObserveHandler:
@@ -98,26 +90,44 @@ class ObserveHandler:
             return rejected("that is not a living thing you can record")
 
         species_component = subject.get_component(SpeciesComponent)
-        name = _subject_name(subject, species_component.species)
-
         # A wary subject bolts if you get close enough to record it without a spyglass.
         wary = subject.has_component(StealthComponent)
         has_spyglass = held_component(ctx.world, character, SpyglassComponent) is not None
         if wary and not has_spyglass:
-            self._spook(subject)
-            return rejected(f"the {name} spooks and slips into cover before you can record it")
+            stealth = subject.get_component(StealthComponent)
+            return planned(
+                MutationPlan(
+                    (
+                        SetComponent(
+                            subject.id,
+                            replace(stealth, hiding=True, visibility_level=0.0),
+                        ),
+                    )
+                )
+            )
 
         room = room_of(ctx.world, character_id)
         room_id = str(room.id) if room is not None else ""
-        event = self._record(ctx, character, species_component, subject_id, room_id)
-        return ok(event)
-
-    def _spook(self, subject) -> None:
-        """Flush a wary subject into cover so it can no longer be seen (until it settles)."""
-        stealth = subject.get_component(StealthComponent)
-        replace_component(
-            subject,
-            replace(stealth, hiding=True, visibility_level=0.0),
+        event, updated_journal = self._record(
+            ctx, character, species_component, subject_id, room_id
+        )
+        knowledge = (
+            character.get_component(KnownSpeciesComponent)
+            if character.has_component(KnownSpeciesComponent)
+            else KnownSpeciesComponent()
+        )
+        updated_knowledge = replace(
+            knowledge,
+            species=tuple(sorted({*knowledge.species, species_component.species})),
+        )
+        return planned(
+            MutationPlan(
+                (
+                    SetComponent(character.id, updated_journal),
+                    SetComponent(character.id, updated_knowledge),
+                )
+            ),
+            event,
         )
 
     def _record(
@@ -127,7 +137,7 @@ class ObserveHandler:
         species_component: SpeciesComponent,
         subject_id,
         room_id: str,
-    ) -> SpeciesObservedEvent:
+    ) -> tuple[SpeciesObservedEvent, LoreJournalComponent]:
         species = species_component.species
         journal = (
             character.get_component(LoreJournalComponent)
@@ -156,9 +166,7 @@ class ObserveHandler:
             discoveries = journal.discoveries
             sightings = updated.sightings
 
-        replace_component(character, replace(journal, records=records, discoveries=discoveries))
-        mark_known(character, species)
-
+        updated_journal = replace(journal, records=records, discoveries=discoveries)
         return SpeciesObservedEvent(
             **ctx.event_base(
                 visibility=EventVisibility.PRIVATE,
@@ -171,7 +179,7 @@ class ObserveHandler:
                 new_record=existing is None,
                 discovery=discovery,
             )
-        )
+        ), updated_journal
 
 
 OBSERVE_DEF = ActionDefinition(

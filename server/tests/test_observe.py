@@ -13,6 +13,7 @@ from bunnyland.core import (
 from bunnyland.core.commands import CommandCost, Lane, build_submitted_command
 from bunnyland.core.ecs import replace_component
 from bunnyland.core.handlers import HandlerContext
+from conftest import execute_handler
 
 from bunnyland_loresim import (
     KnownSpeciesComponent,
@@ -53,7 +54,9 @@ def _cmd(character_id, payload):
 
 def _observe(actor, character_id, subject_id):
     ctx = HandlerContext(world=actor.world, epoch=7)
-    return ObserveHandler().execute(ctx, _cmd(character_id, {"subject_id": str(subject_id)}))
+    return execute_handler(
+        ObserveHandler(), ctx, _cmd(character_id, {"subject_id": str(subject_id)})
+    )
 
 
 def test_observe_records_first_sighting():
@@ -137,7 +140,7 @@ def test_reject_missing_character():
 def test_reject_invalid_subject_id():
     actor, _room, naturalist, _subject = _scene()
     ctx = HandlerContext(world=actor.world, epoch=0)
-    result = ObserveHandler().execute(ctx, _cmd(naturalist.id, {"subject_id": "???"}))
+    result = execute_handler(ObserveHandler(), ctx, _cmd(naturalist.id, {"subject_id": "???"}))
     assert not result.ok
     assert result.reason == "invalid subject id"
 
@@ -186,8 +189,8 @@ def test_wary_subject_spooks_and_flees_without_spyglass():
 
     result = _observe(actor, naturalist.id, subject.id)
 
-    assert not result.ok
-    assert result.reason == "the heron spooks and slips into cover before you can record it"
+    assert result.ok
+    assert result.events == ()
     stealth = subject.get_component(StealthComponent)
     assert stealth.hiding is True
     assert stealth.visibility_level == 0.0

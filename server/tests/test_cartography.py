@@ -9,6 +9,7 @@ from bunnyland.core import (
 )
 from bunnyland.core.commands import CommandCost, Lane, build_submitted_command
 from bunnyland.core.handlers import HandlerContext
+from conftest import execute_handler
 from pydantic.dataclasses import dataclass
 from relics import Component
 
@@ -95,7 +96,7 @@ def _embark(actor, character_id, payload):
         lane=Lane.WORLD,
         payload=payload,
     )
-    return EmbarkHandler().execute(ctx, cmd)
+    return execute_handler(EmbarkHandler(), ctx, cmd)
 
 
 def test_embark_to_charted_site_when_cartography_present(monkeypatch):

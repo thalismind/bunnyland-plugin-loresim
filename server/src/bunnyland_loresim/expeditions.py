@@ -41,10 +41,11 @@ from bunnyland.core.events import DomainEvent, EventVisibility, event_base
 from bunnyland.core.handlers import (
     HandlerContext,
     HandlerResult,
-    ok,
+    planned,
     rejected,
     require_character,
 )
+from bunnyland.core.mutations import AddEdge, MutationPlan, RemoveEdge, SetComponent
 from bunnyland.foundation.social.mechanics import adjust_bond
 from pydantic.dataclasses import dataclass
 from relics import Component, Edge, Entity, World
@@ -192,22 +193,32 @@ class EmbarkHandler:
             return rejection
 
         members = _party_members(ctx.world, character, origin)
-        for member in members:
-            character.add_relationship(ExpeditionMember(), member.id)
-        _relocate(ctx.world, character, destination)
-        for member in members:
-            _relocate(ctx.world, member, destination)
-        replace_component(
-            character,
-            ExpeditionComponent(
-                habitat=habitat,
-                origin_room_id=str(origin.id),
-                site_room_id=str(destination.id),
-                progress=0,
-                duration=EXPEDITION_DURATION,
-            ),
+        operations = [AddEdge(character.id, member.id, ExpeditionMember()) for member in members]
+        for traveller in (character, *members):
+            current_id = container_of(traveller)
+            if current_id is not None:
+                operations.append(RemoveEdge(current_id, traveller.id, Contains))
+            operations.append(
+                AddEdge(
+                    destination.id,
+                    traveller.id,
+                    Contains(mode=ContainmentMode.ROOM_CONTENT),
+                )
+            )
+        operations.append(
+            SetComponent(
+                character.id,
+                ExpeditionComponent(
+                    habitat=habitat,
+                    origin_room_id=str(origin.id),
+                    site_room_id=str(destination.id),
+                    progress=0,
+                    duration=EXPEDITION_DURATION,
+                ),
+            )
         )
-        return ok(
+        return planned(
+            MutationPlan(tuple(operations)),
             ExpeditionStartedEvent(
                 **ctx.event_base(
                     visibility=EventVisibility.ROOM,
@@ -219,7 +230,7 @@ class EmbarkHandler:
                     members=len(members),
                     charted=charted,
                 )
-            )
+            ),
         )
 
     def _destination(self, ctx: HandlerContext, character: Entity, command: SubmittedCommand):

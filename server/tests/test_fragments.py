@@ -3,6 +3,7 @@ from __future__ import annotations
 from bunnyland.core import RoomComponent, WorldActor, spawn_entity
 from bunnyland.core.commands import CommandCost, Lane, build_submitted_command
 from bunnyland.core.handlers import HandlerContext
+from conftest import execute_handler
 
 from bunnyland_loresim import (
     journal_fragments,
@@ -31,7 +32,7 @@ def _observe(actor, character_id, subject_id):
         lane=Lane.WORLD,
         payload={"subject_id": str(subject_id)},
     )
-    return ObserveHandler().execute(HandlerContext(world=actor.world, epoch=0), command)
+    return execute_handler(ObserveHandler(), HandlerContext(world=actor.world, epoch=0), command)
 
 
 def test_knowledge_fragment_lists_known_species():

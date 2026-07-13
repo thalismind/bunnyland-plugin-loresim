@@ -13,6 +13,7 @@ from bunnyland.core.commands import CommandCost, Lane, build_submitted_command
 from bunnyland.core.ecs import contents, parse_entity_id, replace_component
 from bunnyland.core.handlers import HandlerContext
 from bunnyland.foundation.social.mechanics import bond_between
+from conftest import execute_handler
 
 from bunnyland_loresim import (
     Collectible,
@@ -59,7 +60,7 @@ def _embark(actor, character_id, payload):
         lane=Lane.WORLD,
         payload=payload,
     )
-    return EmbarkHandler().execute(ctx, cmd)
+    return execute_handler(EmbarkHandler(), ctx, cmd)
 
 
 def test_embark_opens_fresh_site_and_sets_expedition():

@@ -3,6 +3,7 @@ from __future__ import annotations
 from bunnyland.core import RoomComponent, WorldActor, spawn_entity
 from bunnyland.core.commands import CommandCost, Lane, build_submitted_command
 from bunnyland.core.handlers import HandlerContext
+from conftest import execute_handler
 
 from bunnyland_loresim import (
     LoreJournalComponent,
@@ -25,7 +26,9 @@ def _observe(actor, character_id, subject_id, epoch=0):
         lane=Lane.WORLD,
         payload={"subject_id": str(subject_id)},
     )
-    return ObserveHandler().execute(HandlerContext(world=actor.world, epoch=epoch), command)
+    return execute_handler(
+        ObserveHandler(), HandlerContext(world=actor.world, epoch=epoch), command
+    )
 
 
 def _world_with_room():

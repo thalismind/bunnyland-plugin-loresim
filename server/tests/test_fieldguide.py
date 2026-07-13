@@ -4,6 +4,7 @@ from bunnyland.core import RoomComponent, WorldActor, spawn_entity
 from bunnyland.core.commands import CommandCost, Lane, build_submitted_command
 from bunnyland.core.ecs import replace_component
 from bunnyland.core.handlers import HandlerContext
+from conftest import execute_handler
 
 from bunnyland_loresim import (
     AuthoredBy,
@@ -57,7 +58,7 @@ def _publish(actor, author_id, habitat):
         lane=Lane.WORLD,
         payload={"habitat": habitat},
     )
-    return PublishFieldGuideHandler().execute(ctx, cmd)
+    return execute_handler(PublishFieldGuideHandler(), ctx, cmd)
 
 
 def test_publish_happy_path_masters_species_and_makes_collectible():
